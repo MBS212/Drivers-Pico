@@ -133,7 +133,7 @@ void ReadLightSensor(uint8_t byte1)
   {
     nightTime = true;
   }
-//Serial.print("light sensor:"); Serial.print(byte1); Serial.println("-"); Serial.println(nightTime);
+//Serial.print("light sensor:"); Serial.print(byte1); Serial.print(":"); Serial.println(nightTime);
 }
 // to read and remember the curr. state of the headlight unit
 void ReadHeadlights(uint8_t byte1)

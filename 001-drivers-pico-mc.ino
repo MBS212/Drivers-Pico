@@ -5,7 +5,7 @@
 //   the sensor data aquired through the CAN bus frames
 
 #include "canbusreader.h"  // file to process CAN bus messages and get the values
-//#include "servocontrol.h"  // file to control GoPro servo motor dep. on st. wheel angle
+#include "servocontrol.h"  // file to control GoPro servo motor dep. on st. wheel angle
 #include "corneringlights.h"  // to control the cornering lights
 
 bool Debug = false;  // onboard neopix is OFF, set to true for debugging
@@ -25,17 +25,17 @@ void loop()  // rp2040 1st core loop
 {
   // process CAN bus msgs and return the steering wheel angle (value betw. 3100 & 5100)
   // this function is in canbusreader.h
-  if( millis() - canTime >= 10 )
-  {
+//  if( millis() - canTime >= 5 )
+//  {
     ReadCAN();  
-    canTime = millis();
-  }
+//    canTime = millis();
+//  }
 }
 
 ///////////////////////////////////////
 void setup1()  // rp2040 2nd core setup
 {
-//  SetupServo();   // defined in servocontrol.h
+  SetupServo();   // defined in servocontrol.h
 
   SetupCorneringLights();
 
@@ -57,7 +57,6 @@ void loop1()  // rp2040 2nd core loop
   // than move our GoPro's servo depending on
   // the st. wheel angle, 
   // else we don't need to control servo at night
-/*
   if( !nightTime )
   {
     if( millis() - servoTime >= 10 )
@@ -66,7 +65,6 @@ void loop1()  // rp2040 2nd core loop
       servoTime = millis();
     }
   }
-*/
 
   if( nightTime ) RunCorneringLights();
 
