@@ -25,7 +25,12 @@ void loop()  // rp2040 1st core loop
 {
   // process CAN bus msgs and return the steering wheel angle (value betw. 3100 & 5100)
   // this function is in canbusreader.h
-//  if( millis() - canTime >= 5 )
+  //
+  //   27-04-2024:
+  //   COMMENTED millis() to run ReadCAN() without any delays
+  //    because otherwise it does not always pick up CAN frames
+  //    so now ReadCAN runs without any delays
+//  if( millis() - canTime >= 10 )
 //  {
     ReadCAN();  
 //    canTime = millis();
