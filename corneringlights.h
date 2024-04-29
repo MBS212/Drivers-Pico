@@ -146,7 +146,8 @@ void SwitchCorneringLights()
 // the function to schedule switching on/off the cornering lights
 void RunCorneringLights()
 {
-  if( currentSpeed < MAX_SPEED ) 
+  // 29.04.24 - moved the nightTime condition from the loop1() to here
+  if( nightTime && currentSpeed < MAX_SPEED ) 
   {
     CheckStAngle();
 
