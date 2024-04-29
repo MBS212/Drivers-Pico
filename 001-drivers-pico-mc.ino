@@ -71,7 +71,12 @@ void loop1()  // rp2040 2nd core loop
     }
   }
 
-  if( nightTime ) RunCorneringLights();
+  // 29.04.2024:
+  //   Removed from here the condition: if(nightTime),
+  //   because it would create a bug that it will not switch off the lights 
+  //   when nightTime changes to false (day time) while we are driving.
+  //   This condition is now added in the RunCorneringLights() function.
+  RunCorneringLights();
 
   if( Debug )
   {
