@@ -4,6 +4,9 @@ which cornering light is on or off
 
 both ON if going backward
 left or right ON dep. on st. wheel angle and trun indicators
+
+02.12.24 - added headlights == 'L' cond. that will allow me to switch off corn. lights
+           together with the headlights if I don't need any.
 */
 #define OFFSET_DEGREES 130     // how many degrees from center, at which the corn. lights are to be sw. ON/OFF
 #define MAX_SPEED 15          // maximum speed in kmh the cornering lights to be enabled
