@@ -148,7 +148,7 @@ void RunCorneringLights()
 {
   // 29.04.24 - moved the nightTime condition from the loop1() to here
   // 02.12.24 - added headlights == 'L' cond. that will allow me to switch off corn. lights
-  //            together with the side lights if I don't need any.
+  //            together with the headlights if I don't need any.
   if( nightTime && currentSpeed < MAX_SPEED && headlights == 'L' ) 
   {
     CheckStAngle();
