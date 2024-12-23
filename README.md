@@ -9,7 +9,6 @@ Currently implemented the following functions:
      5. Vehicle's Headlight Sensor.
 
 For the full explanation see the following YouTube videos:
-1. Video 1 - short demo, needed hardware, and sniffing thrugh the CAN bus frames: https://youtu.be/QOX_SNWhKeo?si=jyXIf-hw_pFWFA9B
+1. Video 1 - short demo, needed hardware, and sniffing thrugh the CAN bus frames: https://youtu.be/QOX_SNWhKeo
 2. Video 2 - Analizing the Arduino Code: https://youtu.be/sk0XZvBpJHA
-3. Video 3 - Installing of the hardware:
-
+3. Video 3 - Installing of the hardware: https://youtu.be/rINvdyTEydw
