@@ -45,6 +45,6 @@ void MoveGopro()
 
   // because my servo is backward, and I cannot swap the motor wires, I need to reverse its movement
   //  and so we can do ratio and the reverse with the help of the map(), if we swap 2nd 3rd params as: 
-  servoPos = map(stAngleVal, 5100, 3100, 1140, 1890);
+  servoPos = map(stAngleVal, 5100, 3100, 1110, 1920);
   GPServo.writeMicroseconds(servoPos); // move the servo to the position dependent upon the position of the front wheels
 }

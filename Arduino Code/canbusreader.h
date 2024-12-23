@@ -95,11 +95,14 @@ void ReadCAN()
     {
       ReadLightSensor(a);
     }
-// check for the headlights messages and call the function to get the values
-//    else if( canMsgId == headlightsId )  // 105 decimal
-//    {
-//      ReadHeadlights(a);
-//    }
+//  check for the headlights messages and call the function to get the values
+//  01.12.24 - enabled reading of the headlights to be able to switch off
+//             cornering lights together with headlights if needed
+//             also added the condition in the RunCorneringLights() in corneringlights.h
+    else if( canMsgId == headlightsId )  // 105 decimal
+    {
+      ReadHeadlights(a);
+    }
     else
     {
       // just ignore

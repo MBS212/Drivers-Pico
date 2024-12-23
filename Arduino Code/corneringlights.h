@@ -5,8 +5,8 @@ which cornering light is on or off
 both ON if going backward
 left or right ON dep. on st. wheel angle and trun indicators
 */
-#define OFFSET_DEGREES 150     // how many degrees from center, at which the corn. lights are to be sw. ON/OFF
-#define MAX_SPEED 18          // maximum speed in kmh the cornering lights to be enabled
+#define OFFSET_DEGREES 130     // how many degrees from center, at which the corn. lights are to be sw. ON/OFF
+#define MAX_SPEED 15          // maximum speed in kmh the cornering lights to be enabled
 
 #include <Adafruit_NeoPixel.h>
 #include "hardware/pio.h"          // to control PIO
@@ -33,7 +33,7 @@ uint smLeft;      // the state machine to use for the left relay
 uint smRight;     // the state machine to use for the right relay
 
 unsigned long corneringTime = 0;    // used with millis() to sw. corn. lights
-unsigned long switchingDelay = 100; // delay to switch OFF the corn. lights
+unsigned long switchingDelay = 500; // delay to switch OFF the corn. lights
 
 void SetupCorneringLights()
 {
@@ -88,7 +88,7 @@ void SwitchCorneringLights()
     pio_sm_put_blocking(pio, smRight, 1);  // switch on the right corn. light relay
 //    digitalWrite(rightRelay, HIGH);    // switch on the right corn. light relay
     currentPixColor = purple;          // for debugging - purple means both should be ON
-    switchingDelay = 4000;    // set switch off delay after going back
+    switchingDelay = 5000;    // set switch off delay after going back
   }
   else if( corneringLight == 'L' )
   {
@@ -99,7 +99,7 @@ void SwitchCorneringLights()
 //      digitalWrite(rightRelay, HIGH);   // switch on the right corn. light relay
 //      digitalWrite(leftRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = red;              // right corn. light must now be on
-      switchingDelay = 3000;    // set switch off delay after turn signal
+      switchingDelay = 5000;    // set switch off delay after turn signal
     }
     else
     {
@@ -108,7 +108,7 @@ void SwitchCorneringLights()
 //      digitalWrite(leftRelay, HIGH);   // switch on the left corn. light relay
 //      digitalWrite(rightRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = green; // right corn. light must now be on
-      switchingDelay = 2000;    // set switch off delay after going forward
+      switchingDelay = 5000;    // set switch off delay after going forward
     }
   }
   else if( corneringLight == 'R' )
@@ -120,7 +120,7 @@ void SwitchCorneringLights()
 //      digitalWrite(leftRelay, HIGH);   // switch on the left corn. light relay
 //      digitalWrite(rightRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = green;                  // right corn. light must now be on
-      switchingDelay = 3000;    // set switch off delay after turn indicator
+      switchingDelay = 5000;    // set switch off delay after turn indicator
     }
     else
     {
@@ -129,7 +129,7 @@ void SwitchCorneringLights()
 //      digitalWrite(rightRelay, HIGH);   // switch on the right corn. light relay
 //      digitalWrite(leftRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = red;                  // right corn. light must now be on
-      switchingDelay = 2000;    // set switch off delay after going forward
+      switchingDelay = 5000;    // set switch off delay after going forward
     }
   }
   else
@@ -147,14 +147,23 @@ void SwitchCorneringLights()
 void RunCorneringLights()
 {
   // 29.04.24 - moved the nightTime condition from the loop1() to here
-  if( nightTime && currentSpeed < MAX_SPEED ) 
+  // 02.12.24 - added headlights == 'L' cond. that will allow me to switch off corn. lights
+  //            together with the side lights if I don't need any.
+  if( nightTime && currentSpeed < MAX_SPEED && headlights == 'L' ) 
   {
     CheckStAngle();
 
-    if( millis() - corneringTime >= switchingDelay ) 
+    if( turnSignal == 'N' )
+    {
+      if( millis() - corneringTime >= switchingDelay ) 
+      {
+        SwitchCorneringLights(); 
+        corneringTime = millis();
+      }
+    }
+    else
     {
       SwitchCorneringLights(); 
-      corneringTime = millis();
     }
   }
   else
