@@ -1,7 +1,17 @@
 /* contains functions:
 SetupCan()
 ReadCan() to read the can bus
-          and to process the data 
+          and to process the data
+          
+updates:
+28.12.24 - added reading of the 3rd byte from CAN msg because
+           the 3rd byte of turn signal give clear indication
+           if left is on, or if right is on;
+         - changed turn signal values from 80 and 144 to 5 and 10 from the 3rd byte
+           so that the event will trigger not only on touch, but also on switch
+         - added gearLeverPos var., in order to switch on both corn. lights 
+           not when the vehicle starts moving backward, but when the reverse gear
+           is engaged with the gear lever (right side of steer. wheel) 
 */
 #include <Adafruit_MCP2515.h>
 
@@ -27,15 +37,20 @@ char headlights = 'N';       // remember the state of the headlights [N-none, S-
 // variables to process speed messages
 uint16_t speedId = 515;     // vehicle speed msg id (00203 in hex)
 uint16_t currentSpeed = 0;  // remember the last CAN speed value
-uint8_t speedDirection = 4; // remember the direction of travel, 4 - forward, 8 - backward
+uint8_t speedDirection = 4; // remeber the dir. of travel, 4 - forward, 8 - reverse
+
+// variables to process Gear Lever frames id: 109 (6D hex)
+uint16_t gearLeverId = 109;  // gear lever id
+uint8_t gearLeverPos = '0';  // remember the last position of the gear lever
 
 // variables to process the turn signal messages
 int16_t turnSignalId = 41;    // turn indicator L & R msg id (00029 in hex big-endian),
-                                 //   only first 2 B are changing, as follows:
-                                 //   no indicators: 00 00, left on: 50 E1, right on: 90 E1,
-                                 //   so we have only 1st Byte changing: 0x50 for left, and 0x90 for right
-uint8_t turnSignalLeft = 80;     // 50 in hex
-uint8_t turnSignalRight = 144;   // 90 in hex
+                                 //   1st byte shows if we have touch or switchs or emerg. as follows:
+                                 //   no indicators: 00 00, left touch: 80, left switch on: 64,
+                                 //     right touch: 144, right switch on: 128
+                                 //   3rd byte shows if we have left or right, no matter if it's switch or touch
+uint8_t turnSignalLeft = 5;     // left on (switch or touch) 05 in hex
+uint8_t turnSignalRight = 10;   // right on (switch or touch) 0A in hex
 char turnSignal = 'N';           // none of the turn signals is blinking
 
 // variables to process the steering angle messages
@@ -50,7 +65,8 @@ uint16_t stAngleVal = 4096;  // this will hold the first 2 Bytes of data from th
 void ReadLightSensor(uint8_t byte1);            // find out if it's day or night time
 void ReadHeadlights(uint8_t byte1);             // read & save current state of the headlights
 void ReadSpeed(uint8_t byte1, uint8_t byte2);   // read & save current speed
-void ReadTurnSignal(uint8_t byte1);             // find out if the turn indic. is on and which one
+void ReadGearLever(uint8_t byte2);   // read the gear lever values (right on steer. wheel)
+void ReadTurnSignal(uint8_t byte3);             // find out if the turn indic. is on and which one
 //////////////////////////////////////////////////////////////////////////////
                                 
 // this func. is called from the main setup() function in the 001-steering (our main) file
@@ -68,6 +84,7 @@ void ReadCAN()
   uint16_t canMsgId = 0; // current message ID
   uint8_t a = 0;  // 1st byte from CAN msg data
   uint8_t aa = 0; // 2nd byte from CAN msg data
+  uint8_t aaa = 0; // 3rd byte from CAN msg data
 
   int packetSize = mcp.parsePacket();
 
@@ -79,6 +96,7 @@ void ReadCAN()
     {                          //     in any of the 5 frames that we need, only the 1st 2B of the msg data is usefull to us, so:
       a = mcp.read();          // read 1st byte from the msg data field
       aa = mcp.read();         // read 2nd byte from the msg data field
+      aaa = mcp.read();        // read 3rd byte from the msg data field
     }
     else
     {
@@ -110,13 +128,17 @@ void ReadCAN()
     // read & process CAN bus msgs further only if it's night time,
     if( nightTime )  // headlightsOn && nightTime )
     { 
+      if( canMsgId == gearLeverId )    // check if new speed msg (with id 515) was sent
+      {
+        ReadGearLever(aa);  // 1st byte always 64(40 hex), so need only byte2
+      }
       if( canMsgId == speedId )    // check if new speed msg (with id 515) was sent
       {
         ReadSpeed(a, aa);
       }
       if( canMsgId == turnSignalId )     // check if turn indicator was triggered
       {
-        ReadTurnSignal(a);
+        ReadTurnSignal(aaa);
       }
     }  // end of if headlights ON condition 
   }  // end of frame detection
@@ -183,12 +205,34 @@ void ReadSpeed(uint8_t byte1, uint8_t byte2)
   currentSpeed = (currentSpeed * 0.0375) * 1.609;  // calculate current speed in kmh, dashboard always shows 3 kmh more than CAN bus
 //Serial.print("speed:"); Serial.print(speedDirection); Serial.println("-"); Serial.println(currentSpeed);
 }
+////////////////////////////////////////////////////////
+// read the values of what position the gear lever is in (right side on the steering column)
+//
+void ReadGearLever(uint8_t byte2)
+{
+  if( byte2 == 193 )      gearLeverPos = 'R';
+  else if( byte2 == 194 ) gearLeverPos = 'N';
+  else if( byte2 == 196 ) gearLeverPos = 'N';
+  else if( byte2 == 200 ) gearLeverPos = 'D';
+  else if( byte2 == 208 ) gearLeverPos = 'P';
+  else gearLeverPos = '0'; // default state
+
+/* possible values:                
+40 C0 -- - all off - default state
+40 C1 -- - rear gear
+40 C2 -- - neutral up
+40 C4 -- - neutral down
+40 C8 -- - drive
+40 D0 -- - park
+ */
+}
+
 ///////////////////////////////////////////////////////
 // the function to read the state of the turn signals
-void ReadTurnSignal(uint8_t byte1)
+void ReadTurnSignal(uint8_t byte3)
 {
-  if( byte1 == turnSignalLeft )   turnSignal = 'L';       // update turn signal value
-  else if( byte1 == turnSignalRight )  turnSignal = 'R';  // update turn signal value
+  if( byte3 == turnSignalLeft )   turnSignal = 'L';       // update turn signal value
+  else if( byte3 == turnSignalRight )  turnSignal = 'R';  // update turn signal value
   else turnSignal = 'N';                                  // turn singnal is set to None
 //Serial.print("turn signal:"); Serial.print(byte1); Serial.println("-"); Serial.println(turnSignal);
 }

@@ -5,10 +5,12 @@ which cornering light is on or off
 both ON if going backward
 left or right ON dep. on st. wheel angle and trun indicators
 
+29.04.24 - moved the nightTime condition from the loop1() to here
+
 02.12.24 - added headlights == 'L' cond. that will allow me to switch off corn. lights
-           together with the headlights if I don't need any.
+           together with the headlights if I don't want corn. lights
 */
-#define OFFSET_DEGREES 130     // how many degrees from center, at which the corn. lights are to be sw. ON/OFF
+#define OFFSET_DEGREES 120     // how many degrees from center, at which the corn. lights are to be sw. ON/OFF
 #define MAX_SPEED 15          // maximum speed in kmh the cornering lights to be enabled
 
 #include <Adafruit_NeoPixel.h>
@@ -36,7 +38,7 @@ uint smLeft;      // the state machine to use for the left relay
 uint smRight;     // the state machine to use for the right relay
 
 unsigned long corneringTime = 0;    // used with millis() to sw. corn. lights
-unsigned long switchingDelay = 500; // delay to switch OFF the corn. lights
+unsigned long switchingDelay = 100; // default delay to switch ON/OFF the corn. lights
 
 void SetupCorneringLights()
 {
@@ -84,14 +86,14 @@ void CheckStAngle()
 // based on the CAN bus data
 void SwitchCorneringLights()
 {
-  if( speedDirection > 4 )  // if we are going backward - keep both ON ?
+  if( gearLeverPos == 193 || speedDirection > 4 )  // if we are going backward - keep both ON ?
   {
     pio_sm_put_blocking(pio, smLeft, 1);  // switch on the left corn. light relay
 //    digitalWrite(leftRelay, HIGH);     // switch on the left corn. light relay
     pio_sm_put_blocking(pio, smRight, 1);  // switch on the right corn. light relay
 //    digitalWrite(rightRelay, HIGH);    // switch on the right corn. light relay
     currentPixColor = purple;          // for debugging - purple means both should be ON
-    switchingDelay = 5000;    // set switch off delay after going back
+    switchingDelay = 4000;    // set switch off delay after going back
   }
   else if( corneringLight == 'L' )
   {
@@ -102,7 +104,7 @@ void SwitchCorneringLights()
 //      digitalWrite(rightRelay, HIGH);   // switch on the right corn. light relay
 //      digitalWrite(leftRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = red;              // right corn. light must now be on
-      switchingDelay = 5000;    // set switch off delay after turn signal
+//      switchingDelay = 3000;    // set switch off delay after turn signal
     }
     else
     {
@@ -111,7 +113,7 @@ void SwitchCorneringLights()
 //      digitalWrite(leftRelay, HIGH);   // switch on the left corn. light relay
 //      digitalWrite(rightRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = green; // right corn. light must now be on
-      switchingDelay = 5000;    // set switch off delay after going forward
+      switchingDelay = 4000;    // set switch off delay after going forward
     }
   }
   else if( corneringLight == 'R' )
@@ -123,7 +125,7 @@ void SwitchCorneringLights()
 //      digitalWrite(leftRelay, HIGH);   // switch on the left corn. light relay
 //      digitalWrite(rightRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = green;                  // right corn. light must now be on
-      switchingDelay = 5000;    // set switch off delay after turn indicator
+//      switchingDelay = 3000;    // set switch off delay after turn indicator
     }
     else
     {
@@ -132,7 +134,7 @@ void SwitchCorneringLights()
 //      digitalWrite(rightRelay, HIGH);   // switch on the right corn. light relay
 //      digitalWrite(leftRelay, LOW);   // switch on the left corn. light relay
       currentPixColor = red;                  // right corn. light must now be on
-      switchingDelay = 5000;    // set switch off delay after going forward
+      switchingDelay = 4000;    // set switch off delay after going forward
     }
   }
   else
@@ -142,7 +144,7 @@ void SwitchCorneringLights()
 //    digitalWrite(leftRelay, LOW);   // switch on the left corn. light relay
 //    digitalWrite(rightRelay, LOW);  // switch on the right corn. light relay
     currentPixColor = yellow;          // headlights ON, speed low & positive, but st. wheel within middle range
-    switchingDelay = 100;    // set switch off delay after going back
+    switchingDelay = 200;            // set switch off delay after going back
   }
 }
 ////////////////////////////////////
@@ -151,22 +153,19 @@ void RunCorneringLights()
 {
   // 29.04.24 - moved the nightTime condition from the loop1() to here
   // 02.12.24 - added headlights == 'L' cond. that will allow me to switch off corn. lights
-  //            together with the headlights if I don't need any.
+  //           together with the headlights if I don't want corn. lights
   if( nightTime && currentSpeed < MAX_SPEED && headlights == 'L' ) 
   {
     CheckStAngle();
 
-    if( turnSignal == 'N' )
+    if( turnSignal != 'N' )
     {
-      if( millis() - corneringTime >= switchingDelay ) 
-      {
-        SwitchCorneringLights(); 
-        corneringTime = millis();
-      }
+      switchingDelay = 100;        // quick switch over to opposite side if any indicator is on
     }
-    else
+    if( millis() - corneringTime >= switchingDelay ) 
     {
       SwitchCorneringLights(); 
+      corneringTime = millis();
     }
   }
   else
@@ -176,6 +175,6 @@ void RunCorneringLights()
 //    digitalWrite(leftRelay, LOW);   // switch on the left corn. light relay
 //    digitalWrite(rightRelay, LOW);  // switch on the right corn. light relay
     currentPixColor = yellow;          // headlights/nightTime ON, speed low & positive, but st. wheel within middle range
-    switchingDelay = 100;              // set switch off delay to default
+    switchingDelay = 200;              // set switch off delay to default
   }
 }
